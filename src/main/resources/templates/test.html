@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+
+<h1>JpAjax</h1>
+
+<table border="1">
+    <thead>
+        <tr>
+            <th>id</th>
+            <th>str</th>
+            <th>str2</th>
+            <th>str3</th>
+            <th>수정/삭제</th>
+        </tr>
+    </thead>
+        <tbody id="result"></tbody>
+</table>
+
+<h3>등록</h3>
+
+<form id="saveTest">
+    <input type="number" id="id" name="id" placeholder="id는 자동생성" readonly>
+    <input type="text" id="str" name="str" placeholder="str">
+    <input type="text" id="str2" name="str2" placeholder="str2">
+    <input type="text" id="str3" name="str3" placeholder="str3">
+    <button type="submit">업로드</button>
+</form>
+
+<h4><a href="/">홈</a></h4>
+
+<!-- 수정용 모달 -->
+<div id="updateModal" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    padding: 20px; background: white; border: 1px solid black; z-index: 1000;">
+    <h3>데이터 수정</h3>
+    <form id="updateForm">
+        <input type="number" id="modalId" name="id" readonly>
+        <input type="text" id="modalStr" name="str" placeholder="str">
+        <input type="text" id="modalStr2" name="str2" placeholder="str2">
+        <input type="text" id="modalStr3" name="str3" placeholder="str3">
+        <button type="submit">수정 완료</button>
+    </form>
+    <button onclick="closeModal()">닫기</button>
+</div>
+
+<!-- 모달 배경 (dim 처리) -->
+<div id="modalBackground" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.5); z-index: 500;" onclick="closeModal()"></div>
+
+</body>
+<script>
+const getUrl = '/getTest'
+const saveUrl = '/saveTest'
+const updateUrl = '/updateTest'
+const deleteUrl = '/deleteTest'
+
+const init =()=>{
+    getAll();
+    }
+
+const getAll= async ()=>{
+try{
+    const response = await fetch(getUrl);
+    const data = await response.json();
+    renderTest(data);
+} catch(error){
+    alert('Error: ' + error);
+    }
+}
+
+const renderTest =(data)=> {
+    const result = document.querySelector('#result');
+    let str = '';
+    //배열.forEach(콜백함수)
+    data.forEach((test)=>{
+        str += `<tr>
+                    <td>${test.id}</td>
+                    <td>${test.str}</td>
+                    <td>${test.str2}</td>
+                    <td>${test.str3}</td>
+                    <td>
+                        <button onclick = 'updateTest("${test.id}")'>수정</button>
+                        <button onclick = 'deleteTest("${test.id}")'>삭제</button>
+                    </td>
+                </tr>`
+    })//forEach--------------------
+    result.innerHTML = str;
+};//renderBooks---------
+
+//등록
+document.getElementById('saveTest').addEventListener('submit', async (e) => {
+    e.preventDefault(); // 기본 폼 제출 방지
+
+    const formData = new FormData();
+    formData.append('id', document.getElementById('id').value);
+    formData.append('str', document.getElementById('str').value);
+    formData.append('str2', document.getElementById('str2').value);
+    formData.append('str3', document.getElementById('str3').value);
+
+    try {
+        const response = await fetch(saveUrl, {
+            method: 'POST',
+            body: formData
+        });
+
+        const message = await response.text(); // 서버에서 반환된 메시지
+        //alert(message); // 성공 메시지 표시
+        getAll(); // 데이터 새로고침
+
+        // 인풋 초기화
+        document.getElementById('saveTest').reset();
+    } catch (error) {
+        alert('Error: ' + error);
+    }
+});
+
+//수정
+// 모달 열기
+const openModal = (data) => {
+    // 데이터 채우기
+    document.getElementById('modalId').value = data.id;
+    document.getElementById('modalStr').value = data.str;
+    document.getElementById('modalStr2').value = data.str2;
+    document.getElementById('modalStr3').value = data.str3;
+
+    // 모달과 배경 표시
+    document.getElementById('updateModal').style.display = 'block';
+    document.getElementById('modalBackground').style.display = 'block';
+};
+
+// 모달 닫기
+const closeModal = () => {
+    document.getElementById('updateModal').style.display = 'none';
+    document.getElementById('modalBackground').style.display = 'none';
+};
+
+// 수정 버튼 클릭 시 데이터 가져와 모달 열기
+const updateTest = async (id) => {
+    try {
+        const response = await fetch(`${getUrl}/${id}`);
+        const data = await response.json();
+        openModal(data); // 모달 열기
+    } catch (error) {
+        alert('Error: ' + error);
+    }
+};
+
+// 모달 폼 제출 처리 (수정 요청)
+document.getElementById('updateForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const id = document.getElementById('modalId').value;
+    const requestData = {
+        id: id,
+        str: document.getElementById('modalStr').value,
+        str2: document.getElementById('modalStr2').value,
+        str3: document.getElementById('modalStr3').value
+    };
+
+    try {
+        const response = await fetch(`${updateUrl}/${id}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(requestData)
+        });
+        const message = await response.text();
+        alert(message); // 성공 메시지
+        getAll(); // 데이터 새로고침
+        closeModal(); // 모달 닫기
+    } catch (error) {
+        alert('Error: ' + error);
+    }
+});
+
+//삭제
+const deleteTest=async (id)=> {
+    let yn = confirm(id + "번 도서를 삭제할까요?")
+    if(!yn) return;
+
+    let url = deleteUrl + `/${id}`;
+    const response = await fetch(url, {
+        method: 'DELETE'
+    });
+
+    await getAll();
+}//--------------------------
+
+window.getAll = getAll;
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</html>

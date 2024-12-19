@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+  <h1>타임리프</h1>
+
+  <table border="1">
+    <thead>
+    <tr>
+      <th>id</th>
+      <th>이름</th>
+      <th>나이</th>
+      <th>등급</th>
+      <th>수정/삭제</th>
+    </tr>
+    </thead>
+    <tbody>
+      <tr th:each="form : ${forms}">
+        <td th:text="${form.id}"></td>
+        <td th:text="${form.name}"></td>
+        <td th:text="${form.age}"></td>
+        <td th:text="${form.role}"></td>
+        <td>
+
+          <button type="button" onclick="showEditForm(${form.id})">수정</button>
+
+          <form th:action="@{/deleteData}" method="post">
+            <input type="hidden" name="id" th:value="${form.id}">
+            <button type="submit">삭제</button>
+          </form>
+
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h3>등록</h3>
+
+  <form th:action="@{/saveData}" method="post">
+    <input type="number" id="id" name="id" th:value="${saveForm.id}" placeholder="id는 자동생성" readonly>
+    <input type="text" id="name" name="name" th:value="${saveForm.name}"  placeholder="name">
+    <input type="number" id="age" name="age" th:value="${saveForm.age}"  placeholder="age">
+    <input type="text" id="role" name="role" th:value="${saveForm.role}"  placeholder="role">
+    <button type="submit">업로드</button>
+  </form>
+
+  <div id="editForm" style="display: none;">
+    <form th:action="@{/updateData}" method="post">
+      <input type="hidden" name="id" id="edit-id">
+      <label for="edit-name">Name:</label>
+      <input type="text" name="name" id="edit-name">
+      <label for="edit-age">Age:</label>
+      <input type="number" name="age" id="edit-age">
+      <label for="edit-role">Role:</label>
+      <input type="text" name="role" id="edit-role">
+      <button type="submit" class="btn btn-success btn-sm">수정 완료</button>
+    </form>
+  </div>
+
+  <h4><a href="/">홈</a></h4>
+
+<script>
+function showEditForm(id) {
+  // 수정 폼 표시
+  const editForm = document.getElementById('editForm');
+  editForm.style.display = 'block';
+
+  // 현재 데이터 가져오기 (예: DOM에서 가져오기)
+  const name = document.querySelector(`tr[data-id="${id}"] td[data-field="name"]`).innerText;
+  const age = document.querySelector(`tr[data-id="${id}"] td[data-field="age"]`).innerText;
+  const role = document.querySelector(`tr[data-id="${id}"] td[data-field="role"]`).innerText;
+
+  // 수정 폼에 데이터 채우기
+  document.getElementById('edit-id').value = id;
+  document.getElementById('edit-name').value = name;
+  document.getElementById('edit-age').value = age;
+  document.getElementById('edit-role').value = role;
+}
+</script>
+</html>
